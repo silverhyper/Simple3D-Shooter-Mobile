@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile 3D Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; overflow: hidden; background: #FF0000; touch-action: none; }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; display: none; }
+        
+        #main-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #main-menu-content {
+            text-align: center;
+            color: white;
+            font-family: 'Arial Black', Arial, sans-serif;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #play-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 1001;
+        }
+        #play-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 0, 0.7));
+        }
+        #play-button:hover img {
+            filter: drop-shadow(0 0 10px rgba(0, 255, 0, 1));
+        }
+
+        #cash-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 18px;
+            color: #00FF00;
+            text-shadow: 0 0 5px #00FF00, 0 0 10px #00FF00;
+            z-index: 1001;
+        }
+
+        #shop-container {
+            position: absolute;
+            top: 50px; /* Adjusted for mobile */
+            left: 10px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            color: #00FF00;
+            text-shadow: 0 0 5px #00FF00, 0 0 10px #00FF00;
+            z-index: 1001;
+        }
+        #shop-container > div:first-child {
+            font-size: 22px; /* Slightly smaller for mobile */
+        }
+        #shop-items {
+            margin-top: 5px;
+        }
+        .shop-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .shop-button {
+            padding: 5px 10px;
+            background: #1E90FF;
+            color: white;
+            border: 2px solid #FFFFFF;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 12px;
+        }
+        .shop-button:hover {
+            background: #4682B4;
+        }
+
+        #menu-buttons {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .menu-button {
+            padding: 8px 16px;
+            background: #1E90FF;
+            color: white;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 14px;
+            border: 2px solid #FFFFFF;
+            border-radius: 5px;
+            cursor: pointer;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .menu-button:hover {
+            background: #4682B4;
+        }
+        #logout-button {
+            background: #FF4444;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #logout-button:hover {
+            background: #CC3333;
+        }
+
+        #account-form {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #account-form input {
+            margin: 10px;
+            padding: 8px;
+            width: 150px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            border: 1px solid #FFFFFF;
+            border-radius: 5px;
+        }
+        #form-message {
+            color: #FF4444;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        #hotbar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px;
+            border-radius: 5px;
+            z-index: 10;
+        }
+        .hotbar-slot {
+            width: 30px;
+            height: 30px;
+            background: #6D6D6D;
+            position: relative;
+            border: 2px solid #404040;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            cursor: move;
+        }
+        .hotbar-slot span {
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            font-family: Arial, sans-serif;
+            font-size: 8px;
+            color: white;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        }
+        .hotbar-slot.selected {
+            border-color: #FFFFFF;
+            background: #8D8D8D;
+        }
+        #revolver-icon, #shotgun-icon, #uzi-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: transparent;
+        }
+
+        #health-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 150px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #404040;
+            border-radius: 3px;
+            overflow: hidden;
+            z-index: 10;
+            display: none;
+        }
+        #health-bar {
+            width: 100%;
+            height: 100%;
+            background: #00FF00;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        #death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(128, 128, 128, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        #death-message {
+            color: #FF0000;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+        #respawn-button, #exit-button {
+            padding: 8px 16px;
+            background: #00FF00;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin: 5px;
+        }
+        #respawn-button:hover, #exit-button:hover {
+            background: #00CC00;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+            z-index: 10;
+            display: none;
+        }
+        #crosshair::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-50%);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        }
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateX(-50%);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #joystick-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            display: none;
+            z-index: 10;
+        }
+        #joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(128, 128, 128, 0.5);
+            border-radius: 50%;
+            position: relative;
+        }
+        #joystick {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #fire-button {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #FF4444;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+            z-index: 10;
+            display: none;
+        }
+        #reload-button {
+            position: absolute;
+            bottom: 110px;
+            right: 35px;
+            width: 30px;
+            height: 30px;
+            background: #FFA500;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+            z-index: 10;
+            display: none;
+        }
+        #jump-button {
+            position: absolute;
+            bottom: 10px;
+            right: 40px;
+            width: 40px;
+            height: 40px;
+            background: #00FF00;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+            z-index: 10;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-menu">
+        <div id="main-menu-content">
+            <div id="cash-display">$0.0000</div>
+            <div id="shop-container">
+                <div>Shop</div>
+                <div id="shop-items">
+                    <div class="shop-item">
+                        <span>Shotgun - $2.9872</span>
+                        <button id="buy-shotgun" class="shop-button">Buy</button>
+                    </div>
+                    <div class="shop-item">
+                        <span>Uzi - $3.7112</span>
+                        <button id="buy-uzi" class="shop-button">Buy</button>
+                    </div>
+                </div>
+            </div>
+            <div id="menu-buttons">
+                <button id="login-button" class="menu-button">Login</button>
+                <button id="create-account-button" class="menu-button">Create Account</button>
+            </div>
+            <div id="account-form">
+                <input type="text" id="username-input" placeholder="Username">
+                <input type="password" id="password-input" placeholder="Password">
+                <button id="submit-button" class="menu-button">Submit</button>
+                <div id="form-message"></div>
+            </div>
+            <button id="logout-button" class="menu-button" style="display: none;">Log Out</button>
+            <button id="play-button">
+                <img src="https://www.synergydesignsolutions.com.sg/wordpress/wp-content/uploads/2016/04/play-button.gif" alt="Play">
+            </button>
+            <div id="hotbar">
+                <div class="hotbar-slot"><img id="revolver-icon" src="https://cdn-icons-png.flaticon.com/256/3557/3557376.png" alt="Revolver"><span>1</span></div>
+                <div class="hotbar-slot"><span>2</span></div>
+                <div class="hotbar-slot"><span>3</span></div>
+                <div class="hotbar-slot"><span>4</span></div>
+                <div class="hotbar-slot"><span>5</span></div>
+                <div class="hotbar-slot"><span>6</span></div>
+                <div class="hotbar-slot"><span>7</span></div>
+                <div class="hotbar-slot"><span>8</span></div>
+                <div class="hotbar-slot"><span>9</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="health-container">
+        <div id="health-bar"></div>
+    </div>
+
+    <div id="hotbar" style="display: none;">
+        <div class="hotbar-slot"><img id="revolver-icon" src="https://cdn-icons-png.flaticon.com/256/3557/3557376.png" alt="Revolver"><span>1</span></div>
+        <div class="hotbar-slot"><span>2</span></div>
+        <div class="hotbar-slot"><span>3</span></div>
+        <div class="hotbar-slot"><span>4</span></div>
+        <div class="hotbar-slot"><span>5</span></div>
+        <div class="hotbar-slot"><span>6</span></div>
+        <div class="hotbar-slot"><span>7</span></div>
+        <div class="hotbar-slot"><span>8</span></div>
+        <div class="hotbar-slot"><span>9</span></div>
+    </div>
+
+    <div id="death-screen">
+        <div id="death-message">You Died!</div>
+        <button id="respawn-button">Respawn</button>
+        <button id="exit-button">Exit</button>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="joystick-container">
+        <div id="joystick-base">
+            <div id="joystick"></div>
+        </div>
+    </div>
+    <div id="fire-button"></div>
+    <div id="reload-button"></div>
+    <div id="jump-button"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x87ceeb);
+        document.body.appendChild(renderer.domElement);
+
+        scene.background = new THREE.Color(0x87ceeb);
+
+        const baseGeometry = new THREE.PlaneGeometry(100, 100, 10, 10);
+        const baseMaterial = new THREE.MeshStandardMaterial({
+            color: 0x6D6D6D,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const baseplate = new THREE.Mesh(baseGeometry, baseMaterial);
+        baseplate.rotation.x = -Math.PI / 2;
+        baseplate.position.y = 0;
+        baseplate.receiveShadow = true;
+        scene.add(baseplate);
+
+        const gridHelper = new THREE.GridHelper(100, 100, 0x888888, 0x888888);
+        gridHelper.rotation.x = Math.PI / 2;
+        gridHelper.material.opacity = 0.5;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        const player = {
+            height: 1.8,
+            speed: 0.1,
+            turnSpeed: 0.1,
+            velocity: new THREE.Vector3(),
+            canJump: false,
+            health: 100,
+            selectedSlot: 0,
+            ammo: { 0: 8, 1: 6, 2: 30 }, // 0: revolver, 1: shotgun, 2: uzi
+            maxAmmo: { 0: 8, 1: 6, 2: 30 },
+            isReloading: false,
+            cash: 0,
+            ownsShotgun: false,
+            ownsUzi: false
+        };
+        
+        camera.position.set(0, player.height, 5);
+
+        let yaw = 0;
+        let pitch = 0;
+        const pitchLimit = Math.PI / 2 - 0.1;
+        const touchSensitivity = 0.005;
+
+        const mainMenu = document.getElementById('main-menu');
+        const playButton = document.getElementById('play-button');
+        const canvas = renderer.domElement;
+        const hotbars = document.querySelectorAll('#hotbar');
+        const menuHotbar = hotbars[0];
+        const gameHotbar = hotbars[1];
+        const healthContainer = document.getElementById('health-container');
+        const crosshair = document.getElementById('crosshair');
+        const loginButton = document.getElementById('login-button');
+        const createAccountButton = document.getElementById('create-account-button');
+        const logoutButton = document.getElementById('logout-button');
+        const accountForm = document.getElementById('account-form');
+        const usernameInput = document.getElementById('username-input');
+        const passwordInput = document.getElementById('password-input');
+        const submitButton = document.getElementById('submit-button');
+        const formMessage = document.getElementById('form-message');
+        const menuButtons = document.getElementById('menu-buttons');
+        const cashDisplay = document.getElementById('cash-display');
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystick = document.getElementById('joystick');
+        const fireButton = document.getElementById('fire-button');
+        const reloadButton = document.getElementById('reload-button');
+        const jumpButton = document.getElementById('jump-button');
+        const buyShotgunButton = document.getElementById('buy-shotgun');
+        const buyUziButton = document.getElementById('buy-uzi');
+
+        let isLoggedIn = false;
+        let currentAction = '';
+        let currentUsername = localStorage.getItem('currentUsername');
+        let joystickTouchId = null;
+        let lookTouchId = null;
+        let fireActive = false;
+        let joystickDirection = new THREE.Vector3();
+        let lastLookX = null;
+        let lastLookY = null;
+        let lastFireTime = 0;
+
+        // Load saved data on initialization
+        if (currentUsername) {
+            const savedData = JSON.parse(localStorage.getItem('playerData') || '{}');
+            if (savedData[currentUsername]) {
+                player.cash = savedData[currentUsername].cash || 0;
+                player.ownsShotgun = savedData[currentUsername].ownsShotgun || false;
+                player.ownsUzi = savedData[currentUsername].ownsUzi || false;
+                if (currentUsername === 'INFINITE') {
+                    player.cash += 10;
+                    savedData[currentUsername].cash = player.cash;
+                    localStorage.setItem('playerData', JSON.stringify(savedData));
+                }
+                if (player.ownsShotgun) addShotgunToHotbar();
+                if (player.ownsUzi) addUziToHotbar();
+                isLoggedIn = true;
+            }
+        }
+
+        function updateCashDisplay() {
+            let displayCash = player.cash;
+            if (player.cash >= 0.9999) {
+                displayCash = Math.floor(player.cash) + (player.cash % 1);
+                if (displayCash >= 1 && displayCash < 1.0001) {
+                    displayCash = 1;
+                }
+            }
+            cashDisplay.textContent = `$${displayCash.toFixed(4)}`;
+        }
+
+        function savePlayerData() {
+            if (currentUsername) {
+                const savedData = JSON.parse(localStorage.getItem('playerData') || '{}');
+                savedData[currentUsername] = { 
+                    cash: player.cash,
+                    ownsShotgun: player.ownsShotgun,
+                    ownsUzi: player.ownsUzi
+                };
+                localStorage.setItem('playerData', JSON.stringify(savedData));
+            }
+        }
+
+        function addWeaponToHotbar(weaponType, iconSrc, slotNumber) {
+            const slot = menuHotbar.querySelectorAll('.hotbar-slot')[slotNumber];
+            const gameSlot = gameHotbar.querySelectorAll('.hotbar-slot')[slotNumber];
+            const icon = document.createElement('img');
+            icon.id = `${weaponType}-icon`;
+            icon.src = iconSrc;
+            icon.alt = weaponType.charAt(0).toUpperCase() + weaponType.slice(1);
+            [slot, gameSlot].forEach(s => {
+                s.innerHTML = '';
+                s.appendChild(icon.cloneNode(true));
+                s.appendChild(document.createElement('span')).textContent = (slotNumber + 1).toString();
+            });
+        }
+
+        function addShotgunToHotbar() { addWeaponToHotbar('shotgun', 'https://cdn-icons-png.flaticon.com/256/3181/3181255.png', 1); }
+        function addUziToHotbar() { addWeaponToHotbar('uzi', 'https://cdn-icons-png.flaticon.com/256/2762/2762044.png', 2); }
+
+        buyShotgunButton.addEventListener('click', () => {
+            const shotgunPrice = 2.9872;
+            if (player.cash >= shotgunPrice && !player.ownsShotgun) {
+                player.cash -= shotgunPrice;
+                player.ownsShotgun = true;
+                addShotgunToHotbar();
+                updateCashDisplay();
+                savePlayerData();
+                formMessage.textContent = 'Shotgun purchased successfully!';
+                setTimeout(() => formMessage.textContent = '', 2000);
+            } else if (player.ownsShotgun) {
+                formMessage.textContent = 'You already own the shotgun!';
+            } else {
+                formMessage.textContent = 'Not enough cash!';
+            }
+        });
+
+        buyUziButton.addEventListener('click', () => {
+            const uziPrice = 3.7112;
+            if (player.cash >= uziPrice && !player.ownsUzi) {
+                player.cash -= uziPrice;
+                player.ownsUzi = true;
+                addUziToHotbar();
+                updateCashDisplay();
+                savePlayerData();
+                formMessage.textContent = 'Uzi purchased successfully!';
+                setTimeout(() => formMessage.textContent = '', 2000);
+            } else if (player.ownsUzi) {
+                formMessage.textContent = 'You already own the Uzi!';
+            } else {
+                formMessage.textContent = 'Not enough cash!';
+            }
+        });
+
+        function startGame() {
+            mainMenu.style.display = 'none';
+            canvas.style.display = 'block';
+            gameHotbar.style.display = 'flex';
+            healthContainer.style.display = 'block';
+            crosshair.style.display = 'block';
+            joystickContainer.style.display = 'block';
+            fireButton.style.display = 'block';
+            reloadButton.style.display = 'block';
+            jumpButton.style.display = 'block';
+            animate();
+            renderer.render(scene, camera);
+            if (isLoggedIn) {
+                logoutButton.style.display = 'block';
+                menuButtons.style.display = 'none';
+            }
+        }
+
+        playButton.addEventListener('click', () => {
+            if (isLoggedIn) startGame();
+            else formMessage.textContent = 'Please log in or create an account first!';
+        });
+
+        loginButton.addEventListener('click', () => {
+            currentAction = 'login';
+            menuButtons.style.display = 'none';
+            accountForm.style.display = 'flex';
+            submitButton.textContent = 'Login';
+            formMessage.textContent = '';
+        });
+
+        createAccountButton.addEventListener('click', () => {
+            currentAction = 'create';
+            menuButtons.style.display = 'none';
+            accountForm.style.display = 'flex';
+            submitButton.textContent = 'Create Account';
+            formMessage.textContent = '';
+        });
+
+        submitButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            const accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
+
+            if (currentAction === 'create') {
+                if (username.length < 3) {
+                    formMessage.textContent = 'Username must be at least 3 characters!';
+                    return;
+                }
+                if (password.length < 6) {
+                    formMessage.textContent = 'Password must be at least 6 characters!';
+                    return;
+                }
+                if (accounts[username]) {
+                    formMessage.textContent = 'Username already exists!';
+                    return;
+                }
+                accounts[username] = password;
+                localStorage.setItem('accounts', JSON.stringify(accounts));
+                formMessage.textContent = 'Account created successfully! Logging in...';
+                setTimeout(() => loginSuccess(username), 1000);
+            } else if (currentAction === 'login') {
+                if (!accounts[username] || accounts[username] !== password) {
+                    formMessage.textContent = 'Invalid username or password!';
+                    return;
+                }
+                formMessage.textContent = 'Logged in successfully!';
+                setTimeout(() => loginSuccess(username), 1000);
+            }
+        });
+
+        function loginSuccess(username) {
+            isLoggedIn = true;
+            currentUsername = username;
+            localStorage.setItem('currentUsername', username);
+            const savedData = JSON.parse(localStorage.getItem('playerData') || '{}');
+            if (!savedData[username]) {
+                savedData[username] = { cash: 0, ownsShotgun: false, ownsUzi: false };
+            }
+            player.cash = savedData[username].cash || 0;
+            player.ownsShotgun = savedData[username].ownsShotgun || false;
+            player.ownsUzi = savedData[username].ownsUzi || false;
+            if (username === 'INFINITE') {
+                player.cash += 10;
+                savedData[username].cash = player.cash;
+                localStorage.setItem('playerData', JSON.stringify(savedData));
+            }
+            if (player.ownsShotgun) addShotgunToHotbar();
+            if (player.ownsUzi) addUziToHotbar();
+            accountForm.style.display = 'none';
+            menuButtons.style.display = 'none';
+            logoutButton.style.display = 'block';
+            playButton.style.display = 'block';
+            formMessage.textContent = `Welcome, ${username}!`;
+            updateCashDisplay();
+        }
+
+        logoutButton.addEventListener('click', () => {
+            savePlayerData();
+            isLoggedIn = false;
+            currentUsername = null;
+            localStorage.removeItem('currentUsername');
+            logoutButton.style.display = 'none';
+            menuButtons.style.display = 'flex';
+            formMessage.textContent = '';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            player.cash = 0;
+            player.ownsShotgun = false;
+            player.ownsUzi = false;
+            updateCashDisplay();
+        });
+
+        // Joystick controls
+        joystickContainer.addEventListener('touchstart', (e) => {
+            const touch = e.changedTouches[0];
+            if (!joystickTouchId) {
+                joystickTouchId = touch.identifier;
+                updateJoystick(touch);
+            }
+        });
+
+        joystickContainer.addEventListener('touchmove', (e) => {
+            const touch = Array.from(e.touches).find(t => t.identifier === joystickTouchId);
+            if (touch) {
+                updateJoystick(touch);
+            }
+        });
+
+        joystickContainer.addEventListener('touchend', (e) => {
+            const touch = Array.from(e.changedTouches).find(t => t.identifier === joystickTouchId);
+            if (touch) {
+                joystickTouchId = null;
+                joystick.style.left = '50%';
+                joystick.style.top = '50%';
+                joystickDirection.set(0, 0, 0);
+            }
+        });
+
+        function updateJoystick(touch) {
+            const rect = joystickContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const dx = (touch.clientX - centerX) / (rect.width / 2);
+            const dy = (touch.clientY - centerY) / (rect.height / 2);
+            const distance = Math.min(1, Math.sqrt(dx * dx + dy * dy));
+            const angle = Math.atan2(dy, dx);
+            const limitedX = Math.cos(angle) * distance;
+            const limitedY = Math.sin(angle) * distance;
+            
+            joystick.style.left = `${50 + limitedX * 50}%`;
+            joystick.style.top = `${50 + limitedY * 50}%`;
+            joystickDirection.set(limitedX, 0, limitedY).normalize();
+        }
+
+        // Camera look controls
+        canvas.addEventListener('touchstart', (e) => {
+            if (mainMenu.style.display === 'none' && e.touches.length === 2) {
+                const touch = e.touches[1];
+                if (!lookTouchId && touch.clientX > window.innerWidth / 2) {
+                    lookTouchId = touch.identifier;
+                    lastLookX = touch.clientX;
+                    lastLookY = touch.clientY;
+                }
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            const touch = Array.from(e.touches).find(t => t.identifier === lookTouchId);
+            if (touch) {
+                const dx = touch.clientX - lastLookX;
+                const dy = touch.clientY - lastLookY;
+                
+                yaw -= dx * touchSensitivity;
+                pitch -= dy * touchSensitivity;
+                pitch = Math.max(-pitchLimit, Math.min(pitchLimit, pitch));
+                
+                camera.rotation.order = 'YXZ';
+                camera.rotation.y = yaw;
+                camera.rotation.x = pitch;
+                
+                lastLookX = touch.clientX;
+                lastLookY = touch.clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            const touch = Array.from(e.changedTouches).find(t => t.identifier === lookTouchId);
+            if (touch) {
+                lookTouchId = null;
+                lastLookX = null;
+                lastLookY = null;
+            }
+        });
+
+        // Fire button
+        fireButton.addEventListener('touchstart', () => {
+            fireActive = true;
+            if (player.selectedSlot === 0 && player.ammo[0] > 0 && !player.isReloading) {
+                player.ammo[0]--;
+                fireRevolver();
+            } else if (player.selectedSlot === 1 && player.ownsShotgun && player.ammo[1] > 0 && !player.isReloading) {
+                player.ammo[1]--;
+                fireShotgun();
+            }
+        });
+        fireButton.addEventListener('touchend', () => {
+            fireActive = false;
+        });
+
+        // Reload button
+        reloadButton.addEventListener('touchstart', () => {
+            if (!player.isReloading && player.health > 0) {
+                reload();
+            }
+        });
+
+        // Jump button
+        jumpButton.addEventListener('touchstart', () => {
+            if (player.canJump) {
+                player.velocity.y = 0.2;
+                player.canJump = false;
+            }
+        });
+
+        // Realistic gun sizes (approximate scale in meters)
+        const revolverGeometry = new THREE.BoxGeometry(0.25, 0.1, 0.3); // ~25cm
+        const shotgunGeometry = new THREE.BoxGeometry(0.3, 0.1, 1.0);  // ~1m
+        const uziGeometry = new THREE.BoxGeometry(0.25, 0.15, 0.5);   // ~50cm
+        const weaponMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+        let rightHand = new THREE.Mesh(revolverGeometry, weaponMaterial);
+        rightHand.position.set(0.2, -0.24, -0.3);
+        scene.add(rightHand);
+
+        const bullets = [];
+        const enemies = [];
+
+        // Hotbar drag and drop for mobile (touch-based)
+        let draggedSlot = null;
+        let touchStartX, touchStartY;
+        [menuHotbar, gameHotbar].forEach(hotbar => {
+            hotbar.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                const slot = touch.target.closest('.hotbar-slot');
+                if (slot && slot.querySelector('img')) {
+                    draggedSlot = slot;
+                    touchStartX = touch.clientX;
+                    touchStartY = touch.clientY;
+                    e.preventDefault();
+                }
+            });
+
+            hotbar.addEventListener('touchmove', (e) => {
+                if (draggedSlot) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const targetSlot = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.hotbar-slot');
+                    if (targetSlot && targetSlot !== draggedSlot && targetSlot.parentElement === hotbar) {
+                        const draggedContent = draggedSlot.innerHTML;
+                        draggedSlot.innerHTML = targetSlot.innerHTML;
+                        targetSlot.innerHTML = draggedContent;
+                        const draggedIndex = Array.from(menuHotbar.children).indexOf(draggedSlot);
+                        const targetIndex = Array.from(menuHotbar.children).indexOf(targetSlot);
+                        if (player.selectedSlot === draggedIndex) player.selectedSlot = targetIndex;
+                        else if (player.selectedSlot === targetIndex) player.selectedSlot = draggedIndex;
+                        updateHotbar();
+                        equipItem();
+                    }
+                }
+            });
+
+            hotbar.addEventListener('touchend', () => {
+                draggedSlot = null;
+            });
+        });
+
+        function spawnEnemy() {
+            const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const enemyMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+            const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+            enemy.position.set(
+                (Math.random() - 0.5) * 80,
+                0.5,
+                (Math.random() - 0.5) * 80
+            );
+            enemy.userData.health = 50;
+            enemy.userData.lastHitTime = 0;
+            scene.add(enemy);
+            enemies.push(enemy);
+        }
+
+        for (let i = 0; i < 3; i++) spawnEnemy();
+
+        function updateHotbar() {
+            gameHotbar.querySelectorAll('.hotbar-slot').forEach((slot, index) => {
+                slot.classList.toggle('selected', index === player.selectedSlot);
+            });
+        }
+
+        function equipItem() {
+            scene.remove(rightHand);
+            if (player.selectedSlot === 0) {
+                rightHand = new THREE.Mesh(revolverGeometry, weaponMaterial);
+            } else if (player.selectedSlot === 1 && player.ownsShotgun) {
+                rightHand = new THREE.Mesh(shotgunGeometry, weaponMaterial);
+            } else if (player.selectedSlot === 2 && player.ownsUzi) {
+                rightHand = new THREE.Mesh(uziGeometry, weaponMaterial);
+            } else {
+                rightHand = new THREE.Mesh();
+            }
+            rightHand.position.set(0.2, -0.24, -0.3);
+            scene.add(rightHand);
+        }
+
+        function fireRevolver() {
+            if (player.health > 0 && player.selectedSlot === 0 && player.ammo[0] > 0 && !player.isReloading) {
+                const bulletGeometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
+                const bulletMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF00 });
+                const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                
+                bullet.position.copy(camera.position).add(
+                    new THREE.Vector3(0.2, -0.24, -0.48).applyQuaternion(camera.quaternion)
+                );
+                
+                const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                bullet.userData.velocity = direction.multiplyScalar(0.5);
+                bullet.userData.damage = Math.floor(Math.random() * (30 - 10 + 1)) + 10;
+                
+                scene.add(bullet);
+                bullets.push(bullet);
+            }
+        }
+
+        function fireShotgun() {
+            if (player.health > 0 && player.selectedSlot === 1 && player.ownsShotgun && player.ammo[1] > 0 && !player.isReloading) {
+                const bulletGeometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
+                const bulletMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF00 });
+                
+                for (let i = 0; i < 4; i++) {
+                    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                    bullet.position.copy(camera.position).add(
+                        new THREE.Vector3(0.2, -0.24, -0.48).applyQuaternion(camera.quaternion)
+                    );
+                    
+                    const spread = 0.3; // Increased spread
+                    const direction = new THREE.Vector3(
+                        (Math.random() - 0.5) * spread,
+                        (Math.random() - 0.5) * spread,
+                        -1
+                    ).applyQuaternion(camera.quaternion);
+                    
+                    bullet.userData.velocity = direction.multiplyScalar(0.4);
+                    bullet.userData.damage = Math.floor(Math.random() * (20 - 5 + 1)) + 5;
+                    
+                    scene.add(bullet);
+                    bullets.push(bullet);
+                }
+            }
+        }
+
+        function fireUzi() {
+            if (player.health > 0 && player.selectedSlot === 2 && player.ownsUzi && player.ammo[2] > 0 && !player.isReloading) {
+                const bulletGeometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
+                const bulletMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF00 });
+                const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                
+                bullet.position.copy(camera.position).add(
+                    new THREE.Vector3(0.2, -0.24, -0.48).applyQuaternion(camera.quaternion)
+                );
+                
+                const spread = 0.15;
+                const direction = new THREE.Vector3(
+                    (Math.random() - 0.5) * spread,
+                    (Math.random() - 0.5) * spread,
+                    -1
+                ).applyQuaternion(camera.quaternion);
+                
+                bullet.userData.velocity = direction.multiplyScalar(0.6);
+                bullet.userData.damage = Math.floor(Math.random() * (4 - 2 + 1)) + 2;
+                
+                scene.add(bullet);
+                bullets.push(bullet);
+                player.ammo[2]--;
+            }
+        }
+
+        function reload() {
+            player.isReloading = true;
+            setTimeout(() => {
+                player.ammo[player.selectedSlot] = player.maxAmmo[player.selectedSlot];
+                player.isReloading = false;
+            }, 3000);
+        }
+
+        const healthBar = document.getElementById('health-bar');
+        const deathScreen = document.getElementById('death-screen');
+        const respawnButton = document.getElementById('respawn-button');
+        const exitButton = document.getElementById('exit-button');
+
+        function updateHealthBar() {
+            const healthPercentage = (player.health / 100) * 100;
+            healthBar.style.width = `${healthPercentage}%`;
+
+            if (player.health > 50) {
+                healthBar.style.backgroundColor = '#00FF00';
+            } else if (player.health > 30) {
+                healthBar.style.backgroundColor = '#FFFF00';
+            } else if (player.health > 10) {
+                healthBar.style.backgroundColor = '#FFA500';
+            } else {
+                healthBar.style.backgroundColor = '#FF0000';
+            }
+
+            if (player.health <= 0) {
+                deathScreen.style.display = 'flex';
+            }
+        }
+
+        function returnToMainMenu() {
+            mainMenu.style.display = 'flex';
+            canvas.style.display = 'none';
+            gameHotbar.style.display = 'none';
+            healthContainer.style.display = 'none';
+            crosshair.style.display = 'none';
+            joystickContainer.style.display = 'none';
+            fireButton.style.display = 'none';
+            reloadButton.style.display = 'none';
+            jumpButton.style.display = 'none';
+            deathScreen.style.display = 'none';
+            if (isLoggedIn) {
+                logoutButton.style.display = 'block';
+                menuButtons.style.display = 'none';
+            } else {
+                logoutButton.style.display = 'none';
+                menuButtons.style.display = 'flex';
+            }
+        }
+
+        respawnButton.addEventListener('click', () => {
+            player.health = 100;
+            player.ammo[0] = player.maxAmmo[0];
+            if (player.ownsShotgun) player.ammo[1] = player.maxAmmo[1];
+            if (player.ownsUzi) player.ammo[2] = player.maxAmmo[2];
+            updateHealthBar();
+            deathScreen.style.display = 'none';
+            camera.position.set(0, player.height, 5);
+            player.velocity.set(0, 0, 0);
+            player.selectedSlot = 0;
+            updateHotbar();
+            equipItem();
+            bullets.forEach(bullet => scene.remove(bullet));
+            bullets.length = 0;
+        });
+
+        let gameRunning = true;
+        exitButton.addEventListener('click', () => {
+            savePlayerData();
+            returnToMainMenu();
+        });
+
+        updateHotbar();
+        equipItem();
+        updateHealthBar();
+        updateCashDisplay();
+
+        const gravity = -0.005;
+        const damping = 0.9;
+
+        function animate() {
+            if (!gameRunning) return;
+
+            requestAnimationFrame(animate);
+
+            if (player.health <= 0) {
+                savePlayerData();
+                renderer.render(scene, camera);
+                return;
+            }
+
+            player.velocity.x = 0;
+            player.velocity.z = 0;
+
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            const direction = new THREE.Vector3()
+                .addScaledVector(forward, -joystickDirection.z)
+                .addScaledVector(right, joystickDirection.x)
+                .normalize();
+
+            player.velocity.x = direction.x * player.speed;
+            player.velocity.z = direction.z * player.speed;
+
+            player.velocity.y += gravity;
+            camera.position.add(player.velocity);
+            
+            if (camera.position.y <= player.height) {
+                camera.position.y = player.height;
+                player.velocity.y = 0;
+                player.canJump = true;
+            }
+
+            player.velocity.x *= damping;
+            player.velocity.z *= damping;
+
+            if (rightHand) {
+                rightHand.position.copy(camera.position).add(
+                    new THREE.Vector3(0.2, -0.24, -0.3).applyQuaternion(camera.quaternion)
+                );
+                rightHand.quaternion.copy(camera.quaternion);
+            }
+
+            const currentTime = Date.now();
+            if (fireActive) {
+                if (player.selectedSlot === 0 && player.ammo[0] > 0 && !player.isReloading) {
+                    player.ammo[0]--;
+                    fireRevolver();
+                } else if (player.selectedSlot === 1 && player.ownsShotgun && player.ammo[1] > 0 && !player.isReloading) {
+                    player.ammo[1]--;
+                    fireShotgun();
+                } else if (player.selectedSlot === 2 && player.ownsUzi && player.ammo[2] > 0 && !player.isReloading) {
+                    if (currentTime - lastFireTime >= 333) { // 3 bullets per second
+                        fireUzi();
+                        lastFireTime = currentTime;
+                    }
+                }
+            }
+
+            bullets.forEach((bullet, index) => {
+                bullet.position.add(bullet.userData.velocity);
+                if (bullet.position.distanceTo(camera.position) > 50) {
+                    scene.remove(bullet);
+                    bullets.splice(index, 1);
+                }
+            });
+
+            enemies.forEach((enemy, index) => {
+                const direction = camera.position.clone().sub(enemy.position).normalize();
+                
+                if (enemy.position.distanceTo(camera.position) < 1.5) {
+                    if (currentTime - enemy.userData.lastHitTime >= 1000) {
+                        player.health = Math.max(0, player.health - 10);
+                        updateHealthBar();
+                        enemy.userData.lastHitTime = currentTime;
+                        enemy.position.add(direction.multiplyScalar(-2));
+                    }
+                } else {
+                    enemy.position.add(direction.multiplyScalar(0.03));
+                }
+                
+                bullets.forEach((bullet, bulletIndex) => {
+                    if (bullet.position.distanceTo(enemy.position) < 1) {
+                        enemy.userData.health -= bullet.userData.damage;
+                        scene.remove(bullet);
+                        bullets.splice(bulletIndex, 1);
+                        if (enemy.userData.health <= 0) {
+                            scene.remove(enemy);
+                            enemies.splice(index, 1);
+                            const cashReward = 0.0056 + Math.random() * (0.0123 - 0.0056);
+                            player.cash += cashReward;
+                            updateCashDisplay();
+                            savePlayerData();
+                            spawnEnemy();
+                        }
+                    }
+                });
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(5, 10, 5);
+        directionalLight.castShadow = true;
+        scene.add(ambientLight);
+        scene.add(directionalLight);
+
+        if (isLoggedIn && currentUsername) {
+            logoutButton.style.display = 'block';
+            menuButtons.style.display = 'none';
+            formMessage.textContent = `Welcome back, ${currentUsername}!`;
+        }
+
+        renderer.domElement.style.background = '#00FF00';
+        console.log('Mobile Game initialized - waiting for play');
+    </script>
+</body>
+</html>
